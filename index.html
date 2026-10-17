@@ -115,11 +115,12 @@ function keyOf(i){return S.keys[i]||SET[i][1];}
 function renderList(){
   const L=$('list');L.innerHTML='';
   SET.forEach(([t,k,e,cut,orig],i)=>{
-    const b=document.createElement('button');
+    const b=document.createElement(S.links[i]?'a':'button');
+    if(S.links[i]){b.href=S.links[i];b.style.textDecoration='none';}
     b.className='song'+(S.done[i]?' done':'')+(cut?' cut':'');
     const st=S.links[i]?'opens in Tabs and Chords':(S.sheets[i]?'chords ready':'no link yet — tap ⋯ to add');
     b.innerHTML=`<span class="n">${i+1}</span><span class="t">${t}${orig?' <span class="orig">original</span>':''}<small>${st}</small></span><span class="key">${keyOf(i)}</span><i class="en ${e}"></i><span class="more" role="button" aria-label="Edit ${t}">⋯</span>`;
-    b.onclick=(ev)=>{ if(ev.target.closest('.more')){open(i);return;} if(S.links[i]){S.done[i]=true;save();window.location.href=S.links[i];} else open(i); };
+    b.onclick=(ev)=>{ if(ev.target.closest('.more')){ev.preventDefault();open(i);return;} if(S.links[i]){S.done[i]=true;save();return;} open(i); };
     L.appendChild(b);
   });
   const left=SET.filter((_,i)=>!S.done[i]).length;
