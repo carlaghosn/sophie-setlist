@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Tabs and Chords</title>
+<title>Sophie's Setlist</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
 /* Layout: stage tool for an iPad on a stand. List view (setlist) <-> song view (big chords). Dark, high-contrast, single theme on purpose for dim venues. */
@@ -30,6 +30,7 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
 .song .n{font-family:var(--mono);color:var(--muted);font-size:1.1rem;text-align:center}
 .song .t{font-size:1.25rem;font-weight:700;min-width:0}
 .song .t small{display:block;font-weight:400;color:var(--muted);font-size:.85rem}
+.more{font-size:1.6rem;color:var(--muted);padding:4px 10px;border-radius:8px;background:#ffffff10}
 .key{font-family:var(--mono);font-weight:700;color:var(--gold);font-size:1.15rem}
 .en{width:12px;height:12px;border-radius:50%}
 .en.up{background:var(--up)} .en.mid{background:var(--mid)} .en.slow{background:var(--slow)}
@@ -58,7 +59,7 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
 <body>
 <div class="wrap" id="listView">
   <header>
-    <h1>Tabs and Chords</h1>
+    <h1>Setlist</h1>
     <span class="muted" id="countdown">16 songs · tap a song to open its chords</span>
   </header>
   <div class="legend">
@@ -68,12 +69,12 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
   <div class="tools" style="margin-top:16px">
     <button class="tbtn" id="resetDone">Clear "played" marks</button>
   </div>
-  <p class="muted" style="margin-top:14px">Chord sheets you paste are saved on this iPad only. Open each song once tonight with Wi-Fi and paste its chords, so everything is ready at the venue.</p>
+  <p class="muted" style="margin-top:14px">Set up tonight: for each song, open it in the Tabs and Chords app, tap Share → Copy Link, then come back, tap ⋯ next to the song, paste the link and Save. After that, tapping the song name opens its chords directly. Links and notes are saved on this iPad only.</p>
 </div>
 
 <div class="wrap" id="view">
   <div class="vtop">
-    <button class="tbtn" id="back">← Songs</button>
+    <button class="tbtn" id="back">← Setlist</button>
     <div><span class="vtitle" id="vTitle"></span><span class="vkey" id="vKey"></span></div>
     <div class="zoom"><button class="tbtn" id="smaller">A−</button><button class="tbtn" id="bigger">A+</button><button class="tbtn" id="editBtn">Edit</button></div>
   </div>
@@ -81,6 +82,7 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
   <div class="edit" id="edit" style="display:none">
     <textarea id="editText" placeholder="Paste the chords (and your lyric notes) for this song here."></textarea>
     <div class="row">
+      <label class="muted" for="editLink">Tabs and Chords link</label><input id="editLink" style="width:100%;max-width:520px" placeholder="paste the song's share link from the app">
       <label class="muted" for="editKey">Key / capo</label><input id="editKey">
       <button class="tbtn" id="saveEdit">Save</button><button class="tbtn" id="cancelEdit">Cancel</button>
     </div>
@@ -103,8 +105,9 @@ const SET=[
  ['All Too Well','C','mid',true],['Make You Feel My Love','G','slow',true],['Want You Badly','A','mid',false,true],
  ['Idk What I\'d Do','F','up',false,true]];
 const KEY='setlist_v1';
-let S={sheets:{},keys:{},done:{},size:20};
+let S={sheets:{},keys:{},done:{},links:{},size:20};
 try{const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s) S=Object.assign(S,s);}catch(e){}
+S.links=S.links||{};
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 let cur=0;
 
@@ -114,8 +117,9 @@ function renderList(){
   SET.forEach(([t,k,e,cut,orig],i)=>{
     const b=document.createElement('button');
     b.className='song'+(S.done[i]?' done':'')+(cut?' cut':'');
-    b.innerHTML=`<span class="n">${i+1}</span><span class="t">${t}${orig?' <span class="orig">original</span>':''}<small>${S.sheets[i]?'chords ready':'no chords yet — tap to add'}</small></span><span class="key">${keyOf(i)}</span><i class="en ${e}"></i>`;
-    b.onclick=()=>open(i);
+    const st=S.links[i]?'opens in Tabs and Chords':(S.sheets[i]?'chords ready':'no link yet — tap ⋯ to add');
+    b.innerHTML=`<span class="n">${i+1}</span><span class="t">${t}${orig?' <span class="orig">original</span>':''}<small>${st}</small></span><span class="key">${keyOf(i)}</span><span class="more" role="button" aria-label="Edit ${t}">⋯</span>`;
+    b.onclick=(ev)=>{ if(ev.target.closest('.more')){open(i);return;} if(S.links[i]){S.done[i]=true;save();window.location.href=S.links[i];} else open(i); };
     L.appendChild(b);
   });
   const left=SET.filter((_,i)=>!S.done[i]).length;
@@ -131,6 +135,7 @@ function open(i){
   const sh=$('sheet');sh.style.fontSize=S.size+'px';
   const q=encodeURIComponent(SET[i][0]+' chords');
   sh.innerHTML=S.sheets[i]?fmt(S.sheets[i]):SET[i][4]?`<div class="empty">Your original. Tap <b>Edit</b> and paste your chords and lyrics.</div>`:`<div class="empty">No chords saved for this song yet.<br><br>1. Tap <b>Edit</b> and paste the chord sheet.<br>2. Need one? <a href="https://www.ultimate-guitar.com/search.php?search_type=title&value=${q}" target="_blank" rel="noopener">Search Ultimate Guitar</a>, copy it, come back and paste.</div>`;
+  if(S.links[i]) sh.innerHTML=`<div class="empty"><a href="${S.links[i]}" style="font-size:1.4rem">Open in Tabs and Chords →</a></div>`+(S.sheets[i]?'<hr style="border-color:#333">'+fmt(S.sheets[i]):'');
   $('edit').style.display='none';$('sheetWrap').style.display='block';
   $('played').textContent=S.done[i]?'↺ Unmark':'✓ Played';
   window.scrollTo(0,0);
@@ -142,9 +147,9 @@ $('next').onclick=()=>open(Math.min(SET.length-1,cur+1));
 $('played').onclick=()=>{S.done[cur]=!S.done[cur];save();if(S.done[cur]&&cur<SET.length-1)open(cur+1);else open(cur);};
 $('bigger').onclick=()=>{S.size=Math.min(40,S.size+2);save();$('sheet').style.fontSize=S.size+'px';};
 $('smaller').onclick=()=>{S.size=Math.max(12,S.size-2);save();$('sheet').style.fontSize=S.size+'px';};
-$('editBtn').onclick=()=>{$('editText').value=S.sheets[cur]||'';$('editKey').value=keyOf(cur);$('sheetWrap').style.display='none';$('edit').style.display='block';};
+$('editBtn').onclick=()=>{$('editText').value=S.sheets[cur]||'';$('editLink').value=S.links[cur]||'';$('editKey').value=keyOf(cur);$('sheetWrap').style.display='none';$('edit').style.display='block';};
 $('cancelEdit').onclick=()=>open(cur);
-$('saveEdit').onclick=()=>{S.sheets[cur]=$('editText').value;S.keys[cur]=$('editKey').value.trim()||SET[cur][1];save();open(cur);};
+$('saveEdit').onclick=()=>{S.sheets[cur]=$('editText').value;S.links[cur]=$('editLink').value.trim();S.keys[cur]=$('editKey').value.trim()||SET[cur][1];save();open(cur);};
 $('resetDone').onclick=()=>{S.done={};save();renderList();};
 // keep screen awake while open
 async function wake(){try{if('wakeLock' in navigator) await navigator.wakeLock.request('screen');}catch(e){}}
