@@ -34,6 +34,7 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
 .en{width:12px;height:12px;border-radius:50%}
 .en.up{background:var(--up)} .en.mid{background:var(--mid)} .en.slow{background:var(--slow)}
 .song.done{opacity:.45}
+.orig{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--bg);background:var(--gold);border-radius:6px;padding:2px 6px;vertical-align:middle}
 .song.cut .t::after{content:" · cut if late";color:var(--slow);font-size:.8rem;font-weight:600}
 .legend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 14px;color:var(--muted);font-size:.85rem}
 .legend span{display:flex;align-items:center;gap:6px}
@@ -95,10 +96,10 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
 (()=>{
 const $=id=>document.getElementById(id);
 const SET=[
- ['Save Your Tears','C#','mid'],['Love Story','D','up'],['August','F#','mid'],['Brooklyn Baby','Fm','slow'],
- ['I Knew It I Knew You','C','up'],['Young and Beautiful','D#','slow'],['For the Summer','F','mid'],['When We Were Young','Cm','slow'],
- ['Mistake','D','up'],['All Too Well','C','mid'],['Make You Feel My Love','G','slow',true],['Line Up Perfectly','G','mid'],
- ['Outta Luck','C','slow',true],['Want You Badly','A','mid'],['Bandaid','G','slow'],['Idk What I\'d Do','F','up']];
+ ['Save Your Tears','C#','mid'],['Love Story','D','up'],['Mistake','D','up',false,true],['Brooklyn Baby','Fm','slow'],
+ ['Line Up Perfectly','G','mid',false,true],['I Knew It I Knew You','C','up'],['Outta Luck','C','slow',false,true],['For the Summer','F','mid'],
+ ['When We Were Young','Cm','slow'],['Want You Badly','A','mid',false,true],['Young and Beautiful','D#','slow'],['August','F#','mid'],
+ ['Bandaid','G','slow',false,true],['All Too Well','C','mid',true],['Make You Feel My Love','G','slow',true],['Idk What I\'d Do','F','up',false,true]];
 const KEY='setlist_v1';
 let S={sheets:{},keys:{},done:{},size:20};
 try{const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s) S=Object.assign(S,s);}catch(e){}
@@ -108,10 +109,10 @@ let cur=0;
 function keyOf(i){return S.keys[i]||SET[i][1];}
 function renderList(){
   const L=$('list');L.innerHTML='';
-  SET.forEach(([t,k,e,cut],i)=>{
+  SET.forEach(([t,k,e,cut,orig],i)=>{
     const b=document.createElement('button');
     b.className='song'+(S.done[i]?' done':'')+(cut?' cut':'');
-    b.innerHTML=`<span class="n">${i+1}</span><span class="t">${t}<small>${S.sheets[i]?'chords ready':'no chords yet — tap to add'}</small></span><span class="key">${keyOf(i)}</span><i class="en ${e}"></i>`;
+    b.innerHTML=`<span class="n">${i+1}</span><span class="t">${t}${orig?' <span class="orig">original</span>':''}<small>${S.sheets[i]?'chords ready':'no chords yet — tap to add'}</small></span><span class="key">${keyOf(i)}</span><i class="en ${e}"></i>`;
     b.onclick=()=>open(i);
     L.appendChild(b);
   });
@@ -127,7 +128,7 @@ function open(i){
   $('vTitle').textContent=(i+1)+'. '+SET[i][0];$('vKey').textContent=keyOf(i);
   const sh=$('sheet');sh.style.fontSize=S.size+'px';
   const q=encodeURIComponent(SET[i][0]+' chords');
-  sh.innerHTML=S.sheets[i]?fmt(S.sheets[i]):`<div class="empty">No chords saved for this song yet.<br><br>1. Tap <b>Edit</b> and paste the chord sheet.<br>2. Need one? <a href="https://www.ultimate-guitar.com/search.php?search_type=title&value=${q}" target="_blank" rel="noopener">Search Ultimate Guitar</a>, copy it, come back and paste.</div>`;
+  sh.innerHTML=S.sheets[i]?fmt(S.sheets[i]):SET[i][4]?`<div class="empty">Your original. Tap <b>Edit</b> and paste your chords and lyrics.</div>`:`<div class="empty">No chords saved for this song yet.<br><br>1. Tap <b>Edit</b> and paste the chord sheet.<br>2. Need one? <a href="https://www.ultimate-guitar.com/search.php?search_type=title&value=${q}" target="_blank" rel="noopener">Search Ultimate Guitar</a>, copy it, come back and paste.</div>`;
   $('edit').style.display='none';$('sheetWrap').style.display='block';
   $('played').textContent=S.done[i]?'↺ Unmark':'✓ Played';
   window.scrollTo(0,0);
