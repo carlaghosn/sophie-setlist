@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Sophie's Setlist</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: stage tool for an iPad on a stand. List view (setlist) <-> song view (big chords). Dark, high-contrast, single theme on purpose for dim venues. */
+:root{
+  --bg:#101014; --panel:#1a1a21; --line:#2c2c36; --fg:#f3f1ec; --muted:#9a98a6;
+  --gold:#f0c35a; --up:#6fd39a; --mid:#7fb2ff; --slow:#d98fd0;
+  --display:'DM Serif Display',Georgia,serif; --body:'Inter',-apple-system,Helvetica,sans-serif; --mono:'JetBrains Mono',Menlo,monospace;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);-webkit-text-size-adjust:100%}
+.wrap{max-width:900px;margin:0 auto;padding:12px 16px 40px}
+header{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;padding:6px 0 12px}
+h1{font-family:var(--display);font-weight:400;font-size:2rem;margin:0}
+.muted{color:var(--muted);font-size:.9rem}
+button{font-family:var(--body);cursor:pointer}
+button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.tools{display:flex;gap:8px;flex-wrap:wrap}
+.tbtn{background:var(--panel);border:1px solid var(--line);color:var(--fg);border-radius:10px;padding:10px 14px;font-weight:600;font-size:.95rem}
+.list{display:flex;flex-direction:column;gap:8px}
+.song{text-align:left;color:var(--fg);font:inherit;width:100%;display:grid;grid-template-columns:44px 1fr auto auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 14px;min-height:64px}
+.song .n{font-family:var(--mono);color:var(--muted);font-size:1.1rem;text-align:center}
+.song .t{font-size:1.25rem;font-weight:700;min-width:0}
+.song .t small{display:block;font-weight:400;color:var(--muted);font-size:.85rem}
+.key{font-family:var(--mono);font-weight:700;color:var(--gold);font-size:1.15rem}
+.en{width:12px;height:12px;border-radius:50%}
+.en.up{background:var(--up)} .en.mid{background:var(--mid)} .en.slow{background:var(--slow)}
+.song.done{opacity:.45}
+.song.cut .t::after{content:" · cut if late";color:var(--slow);font-size:.8rem;font-weight:600}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin:10px 0 14px;color:var(--muted);font-size:.85rem}
+.legend span{display:flex;align-items:center;gap:6px}
+/* song view */
+#view{display:none}
+.vtop{display:flex;justify-content:space-between;align-items:center;gap:8px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding:8px 0;z-index:2;flex-wrap:wrap}
+.vtitle{font-family:var(--display);font-size:1.8rem}
+.vkey{font-family:var(--mono);color:var(--gold);font-size:1.3rem;margin-left:8px}
+.sheet{font-family:var(--mono);white-space:pre-wrap;word-break:break-word;line-height:1.55;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;min-height:50vh}
+.empty{color:var(--muted);font-family:var(--body);font-size:1rem;line-height:1.6}
+.empty a{color:var(--gold)}
+.navrow{display:flex;gap:10px;margin-top:12px}
+.navrow .tbtn{flex:1;padding:16px;font-size:1.1rem}
+.edit textarea{width:100%;min-height:55vh;background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:14px;padding:14px;font-family:var(--mono);font-size:15px}
+.edit .row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;align-items:center}
+.edit input{background:var(--panel);color:var(--fg);border:1px solid var(--line);border-radius:10px;padding:10px;font-family:var(--mono);width:110px}
+.zoom{display:flex;gap:6px}
+.chord{color:var(--gold);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap" id="listView">
+  <header>
+    <h1>Setlist</h1>
+    <span class="muted" id="countdown">16 songs · tap a song to open its chords</span>
+  </header>
+  <div class="legend">
+    <span><i class="en up"></i>upbeat</span><span><i class="en mid"></i>medium</span><span><i class="en slow"></i>slow</span>
+  </div>
+  <div class="list" id="list"></div>
+  <div class="tools" style="margin-top:16px">
+    <button class="tbtn" id="resetDone">Clear "played" marks</button>
+  </div>
+  <p class="muted" style="margin-top:14px">Chord sheets you paste are saved on this iPad only. Open each song once tonight with Wi-Fi and paste its chords, so everything is ready at the venue.</p>
+</div>
+
+<div class="wrap" id="view">
+  <div class="vtop">
+    <button class="tbtn" id="back">← Setlist</button>
+    <div><span class="vtitle" id="vTitle"></span><span class="vkey" id="vKey"></span></div>
+    <div class="zoom"><button class="tbtn" id="smaller">A−</button><button class="tbtn" id="bigger">A+</button><button class="tbtn" id="editBtn">Edit</button></div>
+  </div>
+  <div id="sheetWrap"><div class="sheet" id="sheet"></div></div>
+  <div class="edit" id="edit" style="display:none">
+    <textarea id="editText" placeholder="Paste the chords (and your lyric notes) for this song here."></textarea>
+    <div class="row">
+      <label class="muted" for="editKey">Key / capo</label><input id="editKey">
+      <button class="tbtn" id="saveEdit">Save</button><button class="tbtn" id="cancelEdit">Cancel</button>
+    </div>
+  </div>
+  <div class="navrow">
+    <button class="tbtn" id="prev">◀ Previous</button>
+    <button class="tbtn" id="played">✓ Played</button>
+    <button class="tbtn" id="next">Next ▶</button>
+  </div>
+</div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const SET=[
+ ['Save Your Tears','C#','mid'],['Love Story','D','up'],['August','F#','mid'],['Brooklyn Baby','Fm','slow'],
+ ['I Knew It I Knew You','C','up'],['Young and Beautiful','D#','slow'],['For the Summer','F','mid'],['When We Were Young','Cm','slow'],
+ ['Mistake','D','up'],['All Too Well','C','mid'],['Make You Feel My Love','G','slow',true],['Line Up Perfectly','G','mid'],
+ ['Outta Luck','C','slow',true],['Want You Badly','A','mid'],['Bandaid','G','slow'],['Idk What I\'d Do','F','up']];
+const KEY='setlist_v1';
+let S={sheets:{},keys:{},done:{},size:20};
+try{const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s) S=Object.assign(S,s);}catch(e){}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
+let cur=0;
+
+function keyOf(i){return S.keys[i]||SET[i][1];}
+function renderList(){
+  const L=$('list');L.innerHTML='';
+  SET.forEach(([t,k,e,cut],i)=>{
+    const b=document.createElement('button');
+    b.className='song'+(S.done[i]?' done':'')+(cut?' cut':'');
+    b.innerHTML=`<span class="n">${i+1}</span><span class="t">${t}<small>${S.sheets[i]?'chords ready':'no chords yet — tap to add'}</small></span><span class="key">${keyOf(i)}</span><i class="en ${e}"></i>`;
+    b.onclick=()=>open(i);
+    L.appendChild(b);
+  });
+  const left=SET.filter((_,i)=>!S.done[i]).length;
+  $('countdown').textContent=`${left} of ${SET.length} songs to go · tap a song to open its chords`;
+}
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+// highlight chord-only lines
+const CH=/^\s*(\(?[A-G][#b]?(m|maj|min|dim|aug|sus|add)?\d*(\/[A-G][#b]?)?\)?\s*)+\s*$/;
+function fmt(txt){return txt.split('\n').map(l=>CH.test(l)&&l.trim()?`<span class="chord">${esc(l)}</span>`:esc(l)).join('\n');}
+function open(i){
+  cur=i;$('listView').style.display='none';$('view').style.display='block';
+  $('vTitle').textContent=(i+1)+'. '+SET[i][0];$('vKey').textContent=keyOf(i);
+  const sh=$('sheet');sh.style.fontSize=S.size+'px';
+  const q=encodeURIComponent(SET[i][0]+' chords');
+  sh.innerHTML=S.sheets[i]?fmt(S.sheets[i]):`<div class="empty">No chords saved for this song yet.<br><br>1. Tap <b>Edit</b> and paste the chord sheet.<br>2. Need one? <a href="https://www.ultimate-guitar.com/search.php?search_type=title&value=${q}" target="_blank" rel="noopener">Search Ultimate Guitar</a>, copy it, come back and paste.</div>`;
+  $('edit').style.display='none';$('sheetWrap').style.display='block';
+  $('played').textContent=S.done[i]?'↺ Unmark':'✓ Played';
+  window.scrollTo(0,0);
+}
+function back(){$('view').style.display='none';$('listView').style.display='block';renderList();}
+$('back').onclick=back;
+$('prev').onclick=()=>open(Math.max(0,cur-1));
+$('next').onclick=()=>open(Math.min(SET.length-1,cur+1));
+$('played').onclick=()=>{S.done[cur]=!S.done[cur];save();if(S.done[cur]&&cur<SET.length-1)open(cur+1);else open(cur);};
+$('bigger').onclick=()=>{S.size=Math.min(40,S.size+2);save();$('sheet').style.fontSize=S.size+'px';};
+$('smaller').onclick=()=>{S.size=Math.max(12,S.size-2);save();$('sheet').style.fontSize=S.size+'px';};
+$('editBtn').onclick=()=>{$('editText').value=S.sheets[cur]||'';$('editKey').value=keyOf(cur);$('sheetWrap').style.display='none';$('edit').style.display='block';};
+$('cancelEdit').onclick=()=>open(cur);
+$('saveEdit').onclick=()=>{S.sheets[cur]=$('editText').value;S.keys[cur]=$('editKey').value.trim()||SET[cur][1];save();open(cur);};
+$('resetDone').onclick=()=>{S.done={};save();renderList();};
+// keep screen awake while open
+async function wake(){try{if('wakeLock' in navigator) await navigator.wakeLock.request('screen');}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')wake();});
+wake();
+renderList();
+})();
+</script>
+</body>
+</html>
