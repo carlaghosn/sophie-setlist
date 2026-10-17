@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Sophie's Setlist</title>
+<title>Tabs and Chords</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
 <style>
 /* Layout: stage tool for an iPad on a stand. List view (setlist) <-> song view (big chords). Dark, high-contrast, single theme on purpose for dim venues. */
@@ -58,7 +58,7 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
 <body>
 <div class="wrap" id="listView">
   <header>
-    <h1>Setlist</h1>
+    <h1>Tabs and Chords</h1>
     <span class="muted" id="countdown">16 songs · tap a song to open its chords</span>
   </header>
   <div class="legend">
@@ -73,7 +73,7 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
 
 <div class="wrap" id="view">
   <div class="vtop">
-    <button class="tbtn" id="back">← Setlist</button>
+    <button class="tbtn" id="back">← Songs</button>
     <div><span class="vtitle" id="vTitle"></span><span class="vkey" id="vKey"></span></div>
     <div class="zoom"><button class="tbtn" id="smaller">A−</button><button class="tbtn" id="bigger">A+</button><button class="tbtn" id="editBtn">Edit</button></div>
   </div>
@@ -96,10 +96,12 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
 (()=>{
 const $=id=>document.getElementById(id);
 const SET=[
- ['Save Your Tears','C#','mid'],['Love Story','D','up'],['Mistake','D','up',false,true],['Brooklyn Baby','Fm','slow'],
- ['Line Up Perfectly','G','mid',false,true],['I Knew It I Knew You','C','up'],['Outta Luck','C','slow',false,true],['For the Summer','F','mid'],
- ['When We Were Young','Cm','slow'],['Want You Badly','A','mid',false,true],['Young and Beautiful','D#','slow'],['August','F#','mid'],
- ['Bandaid','G','slow',false,true],['All Too Well','C','mid',true],['Make You Feel My Love','G','slow',true],['Idk What I\'d Do','F','up',false,true]];
+ ['Save Your Tears','C#','mid'],['Love Story','D','up'],['Mistake','D','up',false,true],
+ ['Brooklyn Baby','Fm','slow'],['I Knew It I Knew You','C','up'],['Outta Luck','C','slow',false,true],
+ ['For the Summer','F','mid'],['When We Were Young','Cm','slow'],['Line Up Perfectly','G','mid',false,true],
+ ['Young and Beautiful','D#','slow'],['August','F#','mid'],['Bandaid','G','slow',false,true],
+ ['All Too Well','C','mid',true],['Make You Feel My Love','G','slow',true],['Want You Badly','A','mid',false,true],
+ ['Idk What I\'d Do','F','up',false,true]];
 const KEY='setlist_v1';
 let S={sheets:{},keys:{},done:{},size:20};
 try{const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s) S=Object.assign(S,s);}catch(e){}
