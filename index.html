@@ -130,7 +130,8 @@ const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 // highlight chord-only lines
 const CH=/^\s*(\(?[A-G][#b]?(m|maj|min|dim|aug|sus|add)?\d*(\/[A-G][#b]?)?\)?\s*)+\s*$/;
 function fmt(txt){return txt.split('\n').map(l=>CH.test(l)&&l.trim()?`<span class="chord">${esc(l)}</span>`:esc(l)).join('\n');}
-function open(i){
+function open(i,fromPop){
+  if(!fromPop){ if(location.hash.startsWith('#song')) history.replaceState({song:i},'','#song'+(i+1)); else history.pushState({song:i},'','#song'+(i+1)); }
   cur=i;$('listView').style.display='none';$('view').style.display='block';
   $('vTitle').textContent=(i+1)+'. '+SET[i][0];$('vKey').textContent=keyOf(i);
   const sh=$('sheet');sh.style.fontSize=S.size+'px';
@@ -141,7 +142,9 @@ function open(i){
   $('played').textContent=S.done[i]?'↺ Unmark':'✓ Played';
   window.scrollTo(0,0);
 }
-function back(){$('view').style.display='none';$('listView').style.display='block';renderList();}
+function showList(){$('view').style.display='none';$('listView').style.display='block';renderList();window.scrollTo(0,0);}
+function back(){ if(location.hash.startsWith('#song')) history.back(); else showList(); }
+window.addEventListener('popstate',()=>{ const m=location.hash.match(/^#song(\d+)$/); if(m){open(+m[1]-1,true);} else showList(); });
 $('back').onclick=back;
 $('prev').onclick=()=>open(Math.max(0,cur-1));
 $('next').onclick=()=>open(Math.min(SET.length-1,cur+1));
@@ -157,6 +160,7 @@ async function wake(){try{if('wakeLock' in navigator) await navigator.wakeLock.r
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')wake();});
 wake();
 renderList();
+{const m=location.hash.match(/^#song(\d+)$/); if(m) open(+m[1]-1,true);}
 })();
 </script>
 </body>
