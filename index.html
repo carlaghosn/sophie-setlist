@@ -26,7 +26,7 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
 .tools{display:flex;gap:8px;flex-wrap:wrap}
 .tbtn{background:var(--panel);border:1px solid var(--line);color:var(--fg);border-radius:10px;padding:10px 14px;font-weight:600;font-size:.95rem}
 .list{display:flex;flex-direction:column;gap:8px}
-.song{text-align:left;color:var(--fg);font:inherit;width:100%;display:grid;grid-template-columns:44px 1fr auto auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 14px;min-height:64px}
+.song{text-align:left;color:var(--fg);font:inherit;width:100%;display:grid;grid-template-columns:44px 1fr auto auto auto;gap:12px;align-items:center;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 14px;min-height:64px}
 .song .n{font-family:var(--mono);color:var(--muted);font-size:1.1rem;text-align:center}
 .song .t{font-size:1.25rem;font-weight:700;min-width:0}
 .song .t small{display:block;font-weight:400;color:var(--muted);font-size:.85rem}
@@ -118,7 +118,7 @@ function renderList(){
     const b=document.createElement('button');
     b.className='song'+(S.done[i]?' done':'')+(cut?' cut':'');
     const st=S.links[i]?'opens in Tabs and Chords':(S.sheets[i]?'chords ready':'no link yet — tap ⋯ to add');
-    b.innerHTML=`<span class="n">${i+1}</span><span class="t">${t}${orig?' <span class="orig">original</span>':''}<small>${st}</small></span><span class="key">${keyOf(i)}</span><span class="more" role="button" aria-label="Edit ${t}">⋯</span>`;
+    b.innerHTML=`<span class="n">${i+1}</span><span class="t">${t}${orig?' <span class="orig">original</span>':''}<small>${st}</small></span><span class="key">${keyOf(i)}</span><i class="en ${e}"></i><span class="more" role="button" aria-label="Edit ${t}">⋯</span>`;
     b.onclick=(ev)=>{ if(ev.target.closest('.more')){open(i);return;} if(S.links[i]){S.done[i]=true;save();window.location.href=S.links[i];} else open(i); };
     L.appendChild(b);
   });
