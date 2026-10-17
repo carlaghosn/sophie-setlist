@@ -45,6 +45,8 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
 .vtitle{font-family:var(--display);font-size:1.8rem}
 .vkey{font-family:var(--mono);color:var(--gold);font-size:1.3rem;margin-left:8px}
 .sheet{font-family:var(--mono);white-space:pre-wrap;word-break:break-word;line-height:1.55;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;min-height:50vh}
+.intro{background:#2a2412;border:1px solid var(--gold);border-radius:14px;padding:14px 16px;margin-bottom:12px;font-size:1.15rem;line-height:1.5}
+.intro b{display:block;color:var(--gold);font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
 .empty{color:var(--muted);font-family:var(--body);font-size:1rem;line-height:1.6}
 .empty a{color:var(--gold)}
 .navrow{display:flex;gap:10px;margin-top:12px}
@@ -67,9 +69,10 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
   </div>
   <div class="list" id="list"></div>
   <div class="tools" style="margin-top:16px">
+    <a class="tbtn" href="https://www.ultimate-guitar.com/user/playlist/view?id=33264659" target="_blank" rel="noopener" style="text-decoration:none">Open the Ultimate Guitar playlist</a>
     <button class="tbtn" id="resetDone">Clear "played" marks</button>
   </div>
-  <p class="muted" style="margin-top:14px">Set up tonight: for each song, open it in the Tabs and Chords app, tap Share → Copy Link, then come back, tap ⋯ next to the song, paste the link and Save. After that, tapping the song name opens its chords directly. Links and notes are saved on this iPad only.</p>
+  <p class="muted" style="margin-top:14px">The covers already open their chords in Ultimate Guitar. For each original, tap ⋯ to edit the intro you'll say before it and to paste a link to its chords (or paste the chords themselves). Your edits are saved on this iPad only.</p>
 </div>
 
 <div class="wrap" id="view">
@@ -82,7 +85,8 @@ button:focus-visible,textarea:focus-visible,input:focus-visible{outline:2px soli
   <div class="edit" id="edit" style="display:none">
     <textarea id="editText" placeholder="Paste the chords (and your lyric notes) for this song here."></textarea>
     <div class="row">
-      <label class="muted" for="editLink">Tabs and Chords link</label><input id="editLink" style="width:100%;max-width:520px" placeholder="paste the song's share link from the app">
+      <label class="muted" for="editIntro" style="width:100%">What to say before the song (10–30 seconds)</label><textarea id="editIntro" style="min-height:90px;font-family:var(--body)"></textarea>
+      <label class="muted" for="editLink">Chords link</label><input id="editLink" style="width:100%;max-width:520px" placeholder="link to the chords (Tabs and Chords, Google Doc, Notes…)">
       <label class="muted" for="editKey">Key / capo</label><input id="editKey">
       <button class="tbtn" id="saveEdit">Save</button><button class="tbtn" id="cancelEdit">Cancel</button>
     </div>
@@ -105,20 +109,35 @@ const SET=[
  ['All Too Well','C','mid',true],['Make You Feel My Love','G','slow',true],['Want You Badly','A','mid',false,true],
  ['Idk What I\'d Do','F','up',false,true]];
 const KEY='setlist_v1';
-let S={sheets:{},keys:{},done:{},links:{},size:20};
+const UG='https://tabs.ultimate-guitar.com/tab/';
+const DEFAULT_LINKS={
+ 'Save Your Tears':UG+'the-weeknd/save-your-tears-remix-chords-3674594',
+ 'Love Story':UG+'taylor-swift/love-story-chords-730809',
+ 'Brooklyn Baby':UG+'lana-del-rey/brooklyn-baby-chords-1492651',
+ 'I Knew It I Knew You':UG+'misc-cartoons/toy-story-5-i-knew-it-i-knew-you-chords-6471680',
+ 'When We Were Young':'https://tabs.ultimate-guitar.com/user/tab/view?h=KYFCaykOYZTPLSUF9tPYeMwo&tab_id=22733361',
+ 'Young and Beautiful':UG+'lana-del-rey/young-and-beautiful-chords-1244052',
+ 'August':UG+'taylor-swift/august-chords-3261347',
+ 'All Too Well':UG+'taylor-swift/all-too-well-chords-1189554',
+ 'Make You Feel My Love':UG+'adele/make-you-feel-my-love-chords-752102'};
+const PLAYLIST='https://www.ultimate-guitar.com/user/playlist/view?id=33264659';
+const INTRO_DEFAULT=t=>`This next one is an original — I wrote it myself. It's called "${t}". [One sentence: when you wrote it, or what it's about.] I hope you like it.`;
+const introOf=i=>S.intros[i]!==undefined?S.intros[i]:(SET[i][4]?INTRO_DEFAULT(SET[i][0]):'');
+let S={sheets:{},keys:{},done:{},links:{},intros:{},size:20};
 try{const s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s) S=Object.assign(S,s);}catch(e){}
-S.links=S.links||{};
+S.links=S.links||{};S.intros=S.intros||{};
 const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}};
 let cur=0;
+SET.forEach(([t],i)=>{ if(!S.links[i] && DEFAULT_LINKS[t]) S.links[i]=DEFAULT_LINKS[t]; });
 
 function keyOf(i){return S.keys[i]||SET[i][1];}
 function renderList(){
   const L=$('list');L.innerHTML='';
   SET.forEach(([t,k,e,cut,orig],i)=>{
     const b=document.createElement(S.links[i]?'a':'button');
-    if(S.links[i]){b.href=S.links[i];b.style.textDecoration='none';}
+    if(S.links[i]){b.href=S.links[i];b.target='_blank';b.rel='noopener';b.style.textDecoration='none';}
     b.className='song'+(S.done[i]?' done':'')+(cut?' cut':'');
-    const st=S.links[i]?'opens in Tabs and Chords':(S.sheets[i]?'chords ready':'no link yet — tap ⋯ to add');
+    const st=S.links[i]?'chords link ready':(S.sheets[i]?'chords ready':'no link yet — tap ⋯ to add');
     b.innerHTML=`<span class="n">${i+1}</span><span class="t">${t}${orig?' <span class="orig">original</span>':''}<small>${st}</small></span><span class="key">${keyOf(i)}</span><i class="en ${e}"></i><span class="more" role="button" aria-label="Edit ${t}">⋯</span>`;
     b.onclick=(ev)=>{ if(ev.target.closest('.more')){ev.preventDefault();open(i);return;} if(S.links[i]){S.done[i]=true;save();return;} open(i); };
     L.appendChild(b);
@@ -137,7 +156,8 @@ function open(i,fromPop){
   const sh=$('sheet');sh.style.fontSize=S.size+'px';
   const q=encodeURIComponent(SET[i][0]+' chords');
   sh.innerHTML=S.sheets[i]?fmt(S.sheets[i]):SET[i][4]?`<div class="empty">Your original. Tap <b>Edit</b> and paste your chords and lyrics.</div>`:`<div class="empty">No chords saved for this song yet.<br><br>1. Tap <b>Edit</b> and paste the chord sheet.<br>2. Need one? <a href="https://www.ultimate-guitar.com/search.php?search_type=title&value=${q}" target="_blank" rel="noopener">Search Ultimate Guitar</a>, copy it, come back and paste.</div>`;
-  if(S.links[i]) sh.innerHTML=`<div class="empty"><a href="${S.links[i]}" style="font-size:1.4rem">Open in Tabs and Chords →</a></div>`+(S.sheets[i]?'<hr style="border-color:#333">'+fmt(S.sheets[i]):'');
+  if(S.links[i]) sh.innerHTML=`<div class="empty"><a href="${S.links[i]}" target="_blank" rel="noopener" style="font-size:1.4rem">Open chords →</a></div>`+(S.sheets[i]?'<hr style="border-color:#333">'+fmt(S.sheets[i]):'');
+  if(introOf(i)) sh.innerHTML=`<div class="intro" style="font-family:var(--body)"><b>Say before the song · 10–30 sec</b>${esc(introOf(i))}</div>`+sh.innerHTML;
   $('edit').style.display='none';$('sheetWrap').style.display='block';
   $('played').textContent=S.done[i]?'↺ Unmark':'✓ Played';
   window.scrollTo(0,0);
@@ -151,9 +171,9 @@ $('next').onclick=()=>open(Math.min(SET.length-1,cur+1));
 $('played').onclick=()=>{S.done[cur]=!S.done[cur];save();if(S.done[cur]&&cur<SET.length-1)open(cur+1);else open(cur);};
 $('bigger').onclick=()=>{S.size=Math.min(40,S.size+2);save();$('sheet').style.fontSize=S.size+'px';};
 $('smaller').onclick=()=>{S.size=Math.max(12,S.size-2);save();$('sheet').style.fontSize=S.size+'px';};
-$('editBtn').onclick=()=>{$('editText').value=S.sheets[cur]||'';$('editLink').value=S.links[cur]||'';$('editKey').value=keyOf(cur);$('sheetWrap').style.display='none';$('edit').style.display='block';};
+$('editBtn').onclick=()=>{$('editText').value=S.sheets[cur]||'';$('editLink').value=S.links[cur]||'';$('editIntro').value=introOf(cur);$('editKey').value=keyOf(cur);$('sheetWrap').style.display='none';$('edit').style.display='block';};
 $('cancelEdit').onclick=()=>open(cur);
-$('saveEdit').onclick=()=>{S.sheets[cur]=$('editText').value;S.links[cur]=$('editLink').value.trim();S.keys[cur]=$('editKey').value.trim()||SET[cur][1];save();open(cur);};
+$('saveEdit').onclick=()=>{S.sheets[cur]=$('editText').value;S.links[cur]=$('editLink').value.trim();S.intros[cur]=$('editIntro').value.trim();S.keys[cur]=$('editKey').value.trim()||SET[cur][1];save();open(cur);};
 $('resetDone').onclick=()=>{S.done={};save();renderList();};
 // keep screen awake while open
 async function wake(){try{if('wakeLock' in navigator) await navigator.wakeLock.request('screen');}catch(e){}}
